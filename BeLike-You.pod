@@ -28,7 +28,7 @@ distro.  This level of minimization started with the stupid easy
 configuration within the C<dist.ini>, which would contain basically all of
 the directives you need in a short, maybe 20-line, INI file.
 
-"Twenty lines?  Screw that!  That's way too much!"
+B<Twenty lines?  Screw that!  That's way too much!>
 
 Or as Ricardo Signes (the guy behind L<Dist::Zilla>, among many other modules)
 declared in L<an article about Dist::Zilla|http://www.perl.com/pub/2010/03/more-code-less-cruft-managing-distributions-with-distzilla.html>:
@@ -55,11 +55,12 @@ as a n00b to L<Dist::Zilla>, do L<a quick search|https://metacpan.org/search?q=D
 to figure out how exactly that C<[@RJBS]> trick works, and am horrified at the
 answer.
 
-Why does it matter?  Who cares about CPAN namespace pollution?  Well, CPAN
-already has a big enough problem with namespace pollution, module abandonment,
-and other sociological hurdles without this odd concept of "personalized
-modules" coming along.  When a module is written for you and you alone, it's
-not CPAN, but UPAN.
+B<Why does it matter?  Who cares about CPAN namespace pollution?>
+
+Well, CPAN already has a big enough problem with namespace pollution, module
+abandonment, and other sociological hurdles without this odd concept of
+"personalized modules" coming along.  When a module is written for you and
+you alone, it's not CPAN, but UPAN.
 
 I am L<certainly not alone in this sentiment|Dist::Zilla::PluginBundle::Author::KENTNL/"NAMING SCHEME">, either.
 
@@ -73,7 +74,7 @@ How does it work?  You know that "Extra" textbox in your MetaCPAN author
 profile?  Yeah, that one.  The one that you have probably never used.  Well,
 we're going to use that.  No, seriously.  It'll be cool and awesome.
 
-=item B<Wait, what?>
+B<Wait, what?>
 
 Yes, THAT thing.  Why?  Because it's an B<author's> profile!  What better
 place to put personalized information than in the author's profile.  Remove
@@ -90,7 +91,7 @@ parses it into various PluginBundle requirements, and acts like your typical
 personalized PluginBundle.  Without the namespace pollution, and with all of
 the benefits.
 
-=item B<Sounds complicated.  I'm too lazy, so I'm just going to write one of
+B<Sounds complicated.  I'm too lazy, so I'm just going to write one of
 those personalized PluginBundle modules.>
 
 Why?  It's not complicated.  If you can write a PluginBundle module, you can
@@ -128,7 +129,7 @@ be the version of the JSON structure.  Hopefully, V1 will be the only one we
 ever need, but in case a massive restructure is in order, a new version of
 the structure can go into a different object.  This whole single string could
 have been broken down to several nested objects
-(C<Dist-E<gt>Zilla-E<gt>PluginBundle-E<gt>BeLike-E<gt>You-E<gt>V1), but that
+(C<Dist-E<gt>Zilla-E<gt>PluginBundle-E<gt>BeLike-E<gt>You-E<gt>V1>), but that
 many levels of indentation would have been annoying and hard to read.
 
 =head2 Definition by Example
@@ -255,100 +256,110 @@ written by the same guy who designed the PluginBundles in the first place:
 
 Okay, this looks a little daunting, but compare it to the L<original|https://metacpan.org/source/Dist::Zilla::PluginBundle::RJBS>.
 There's plenty of extra hash/array REFs, but overall, it's very similiar to
-the original module.  Besides, this level of coding confusion can be greatly
-simplified:
+the original module.  Besides, this level of coding confusion can be
+simplified to:
 
-   # header removed
-   [
-      { "*ini" : [
-         "[@BeLike::YOU::Properties]",
-         "manual_version = [Bool] $self->payload->{manual_version}",
-         "major_version  = [Int]  $self->payload->{version}",
-         "is_task        = [Bool] $self->payload->{task}",
-         "github_issues  = [Bool] $self->payload->{github_issues}",
-         "weaver_config  = [Str]  $self->payload->{weaver_config} || '@RJBS'",
-      ] },
-      
-      { "*Perl::if" : [
-         { "*Perl::eval" : "$self->is_task and $self->weaver_config ne '@RJBS'" },
-         { "log_fatal" : [ "you must not specify both weaver_config and is_task" ] }
-      },
+   # in profile.ini
+   [@BeLike::YOU::properties]
+   manual_version = [Bool] $self->payload->{manual_version}
+   major_version  = [Int]  $self->payload->{version}
+   is_task        = [Bool] $self->payload->{task}
+   github_issues  = [Bool] $self->payload->{github_issues}
+   weaver_config  = [Str]  $self->payload->{weaver_config} || '@RJBS'
 
-      { "*ini" : [
-         "[Git::GatherDir]",
-         "[CheckPrereqsIndexed]",
-         "[CheckExtraTests]",
-         "",
-         "[@Filter]",
-         "-bundle = @Basic",
-         "-remove = GatherDir",
-         "-remove = ExtraTests",
-         "",
-         "[AutoPrereqs]",
-         "[PkgVersion]",
-         "[MetaConfig]",
-         "[MetaJSON]",
-         "[NextRelease]",
-         "[PodSyntaxTests]",
-         "",
-         "[Prereqs TestMoreWithSubtests]",
-         "-phase = test",
-         "-type = requires",
-         "Test::More = 0.96",
-      ] },
-      
-      { "*Perl::unless" : [
-         { "*Perl::eval" : "$self->manual_version" },
-         { "*Perl::if": [
-            { "*Perl::eval" : "$self->is_task" },
-            { "add_plugins" : [ [
-               "AutoVersion", {
-                  "major"     : { "*Perl::eval" : "$self->major_version" },
-                  "format"    : { "*Perl::eval" : "q<{{cldr('yyyyMMdd')}}> . sprintf('.%03u', ($ENV{N} || 0))" },
-                  "time_zone" : "America/New_York",
-               }               
-            ] ] },
-            { "*ini" : [
-               "[Git::NextVersion]",
-               "version_regexp = ^([0-9]+\\.[0-9]+)$"
-            ] }
-         ] }
-      },
+   [@BeLike::YOU::Perl::eval]
+   - = $self->log_fatal("you must not specify both weaver_config and is_task")
+   - =    if $self->is_task and $self->weaver_config ne '@RJBS';
 
-      { "*Perl::if": [
-         { "*Perl::eval" : "$self->is_task" },
-         { "*ini" : [ "[TaskWeaver]" ] },
-         { "add_plugins" : [ [
-            "PodWeaver", { config_plugin : { "*Perl::eval" : "$self->weaver_config" } }
-         ] ] }
-      ] },
+   [Git::GatherDir]
+   [CheckPrereqsIndexed]
+   [CheckExtraTests]
+   
+   [@Filter]
+   -bundle = @Basic
+   -remove = GatherDir
+   -remove = ExtraTests
+   
+   [AutoPrereqs]
 
-      { "add_plugins" : [ 
-         [ "GithubMeta", {
-            "user"   : "rjbs",
-            "remote" : [ "github", "origin" ],
-            "issues" : { "*eval" : "$self->github_issues" },
-         } ],
-      ] },
+   [@BeLike::YOU::Perl::eval]
+   - = unless ($self->manual_version) {
+   - =   if ($self->is_task) {
+   - =     my $v_format = q<{{cldr('yyyyMMdd')}}>
+   - =                  . sprintf('.%03u', ($ENV{N} || 0));
+   - = 
+   - =     $self->add_plugins([
+   - =       AutoVersion => {
+   - =         major     => $self->major_version,
+   - =         format    => $v_format,
+   - =         time_zone => 'America/New_York',
+   - =       }
+   - =     ]);
+   - =   } else {
+   - =     $self->add_plugins([
+   - =       'Git::NextVersion' => {
+   - =         version_regexp => '^([0-9]+\.[0-9]+)$',
+   - =       }
+   - =     ]);
+   - =   }
+   - = }
+
+   [PkgVersion]
+   [MetaConfig]
+   [MetaJSON]
+   [NextRelease]
+   [PodSyntaxTests]
+ 
+   [Prereqs TestMoreWithSubtests]
+   -phase = test
+   -type = requires
+   Test::More = 0.96
+
+   [@BeLike::YOU::Perl::eval]
+   - = if ($self->is_task) {
+   - =   $self->add_plugins('TaskWeaver');
+   - = } else {
+   - =   $self->add_plugins([
+   - =     PodWeaver => { config_plugin => $self->weaver_config }
+   - =   ]);
+   - = }
+
+   - = $self->add_plugins(
+   - =   [ GithubMeta => {
+   - =     user   => 'rjbs',
+   - =     remote => [ qw(github origin) ],
+   - =     issues => $self->github_issues,
+   - =   } ],
+   - = );
+   
+   [@Git]
+   tag_format = %v
+   push_to = origin
+   push_to = github
+
+   [@BeLike::YOU::dependency_list]
+   dep = Dist::Zilla::Plugin::PodWeaver
+   dep = Dist::Zilla::Plugin::GithubMeta
+   dep = Pod::Elemental::Transformer::List
+   dep = Dist::Zilla::Plugin::CheckPrereqsIndexed
+   dep = Dist::Zilla::Plugin::TaskWeaver
+   dep = Dist::Zilla::PluginBundle::Git
+   
+   bash# distini2json profile.ini BeLikeYou.json
+
+   # which turns into objects like...
       { "*ini" : [
          "[@Git]",
          "tag_format = %v",
          "push_to = origin",
          "push_to = github"
       ] }
-      
-      { "*dependency_list" : [
-         "Dist::Zilla::Plugin::PodWeaver",
-         "Dist::Zilla::Plugin::GithubMeta",
-         "Pod::Elemental::Transformer::List",
-         "Dist::Zilla::Plugin::CheckPrereqsIndexed",
-         "Dist::Zilla::Plugin::TaskWeaver",
-         "Dist::Zilla::PluginBundle::Git"
-      ] }
-   ]
+   # ...and the JSON example above
 
-Okay, so by taking advantage of the *ini command, we've gone from 111 lines
-to 87 lines, and it looks a lot easier to read.
+So, by taking advantage of the C<distini2json> command, we've reduced the size
+of the JSON, and it looks a lot easier to read.  This also illustrates that
+you can forgo the other *special command JSON-building and just resort to
+eval code.
 
 Let's break this down...
 
